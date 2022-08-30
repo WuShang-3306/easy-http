@@ -1,0 +1,8 @@
+group 'cn.refacter.easy-http'
+
+subprojects {
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+    }
+}
+
