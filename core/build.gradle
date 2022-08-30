@@ -10,8 +10,16 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.9'
+    implementation 'org.springframework:spring-context:5.2.8.RELEASE'
+    implementation 'org.springframework.boot:spring-boot:2.6.7'
+
+    compileOnly 'org.projectlombok:lombok:1.18.12'
+    annotationProcessor 'org.projectlombok:lombok:1.18.12'
+
+    implementation 'org.apache.commons:commons-lang3:3.8.1'
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'com.alibaba:fastjson:1.2.83'
 }
 
 test {
