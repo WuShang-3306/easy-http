@@ -78,6 +78,7 @@ public class HttpClientProxyHandler implements InvocationHandler, ApplicationCon
                 metaData.setRequestUrl(String.format("%s%s", metaData.getBaseUrl(), metaData.getPathUrl()));
             }
         }
+        metaData.setResponseType(method.getReturnType());
     }
 
     private void metaValidate(HttpRequestMetaData metaData, Method method) {
