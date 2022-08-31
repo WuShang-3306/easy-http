@@ -20,6 +20,11 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.8.1'
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'com.alibaba:fastjson:1.2.83'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testCompileOnly 'junit:junit:4.13.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.7.1'
 }
 
 test {

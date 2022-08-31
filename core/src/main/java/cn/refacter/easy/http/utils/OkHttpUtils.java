@@ -1,6 +1,9 @@
 package cn.refacter.easy.http.utils;
 
 import okhttp3.*;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
@@ -10,11 +13,17 @@ import java.util.Map;
  * @author refacter
  * Date：Create in 2022/8/30 21:44
  */
-public class OkHttpUtils {
+@Component
+public class OkHttpUtils implements InitializingBean {
+    // TODO: 2022/8/31 change init mode
     private static OkHttpClient CLIENT;
+    
+    @Autowired
+    private OkHttpClient easyHttpOkHttpClient;
 
-    public static void setCLIENT(OkHttpClient okHttpClient) {
-        OkHttpUtils.CLIENT = okHttpClient;
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        OkHttpUtils.CLIENT = easyHttpOkHttpClient;
     }
 
     public static String get(String url, Map<String, String> requestParam, Map<String, String> header) throws IOException {

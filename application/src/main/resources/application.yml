@@ -1,7 +1,0 @@
-easy-http:
-  connectTimeout: 3
-  readTimeout: 3
-  writeTimeout: 3
-http:
-  base:
-    url: www.baidu.com

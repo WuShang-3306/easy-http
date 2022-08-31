@@ -1,0 +1,5 @@
+request.get.base.url: https://autumnfish.cn
+easy-http:
+  connectTimeout: 3
+  readTimeout: 3
+  writeTimeout: 3
