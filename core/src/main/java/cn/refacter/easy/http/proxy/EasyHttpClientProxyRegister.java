@@ -28,7 +28,7 @@ import java.util.Set;
  * @author refacter
  * Date：Create in 2022/8/30 21:26
  */
-public class HttpClientProxyRegister implements ImportBeanDefinitionRegistrar, ResourceLoaderAware, EnvironmentAware {
+public class EasyHttpClientProxyRegister implements ImportBeanDefinitionRegistrar, ResourceLoaderAware, EnvironmentAware {
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
@@ -83,7 +83,7 @@ public class HttpClientProxyRegister implements ImportBeanDefinitionRegistrar, R
                           AnnotationMetadata annotationMetadata, Map<String, Object> attributes) throws ClassNotFoundException {
         String className = annotationMetadata.getClassName();
         BeanDefinitionBuilder definition = BeanDefinitionBuilder
-                .genericBeanDefinition(HttpClientProxyFactoryBean.class);
+                .genericBeanDefinition(EasyHttpClientProxyFactoryBean.class);
         String name = this.getName(annotationMetadata);
         definition.addPropertyValue("name", name);
         definition.addPropertyValue("contextId", name);

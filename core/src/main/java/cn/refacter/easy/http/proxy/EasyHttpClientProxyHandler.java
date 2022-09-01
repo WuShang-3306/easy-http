@@ -1,5 +1,6 @@
 package cn.refacter.easy.http.proxy;
 
+import cn.refacter.easy.http.annotations.HttpBody;
 import cn.refacter.easy.http.annotations.HttpRequest;
 import cn.refacter.easy.http.base.HttpRequestMetaData;
 import cn.refacter.easy.http.constant.HttpMethod;
@@ -11,8 +12,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -40,12 +43,13 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // TODO: 2022/9/2 proxy cache
         HttpRequestMetaData metaData = new HttpRequestMetaData();
         HttpRequest classAnnotation = AnnotationUtils.getAnnotation(method.getDeclaringClass(), HttpRequest.class);
-        HttpRequest methodAnnotation = AnnotationUtils.getAnnotation(method, HttpRequest.class);
+        HttpRequest methodAnnotation = method.getDeclaringClass().getDeclaredMethod(method.getName(), method.getParameterTypes()).getDeclaredAnnotation(HttpRequest.class);
         this.classAnnotationProcess(classAnnotation, metaData);
         this.methodAnnotationProcess(methodAnnotation, metaData);
-        this.metaDataProcess(metaData, method);
+        this.metaDataProcess(metaData, method, args);
         this.metaValidate(metaData, method);
 
         String responseStr = this.request(metaData);
@@ -83,13 +87,30 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         metaData.setHttpMethod(Objects.isNull(httpRequest.httpMethod()) ? metaData.getHttpMethod() : httpRequest.httpMethod());
     }
 
-    private void metaDataProcess(HttpRequestMetaData metaData, Method method) throws InstantiationException, IllegalAccessException {
+    @SuppressWarnings("unchecked")
+    private void metaDataProcess(HttpRequestMetaData metaData, Method method, Object[] args) throws InstantiationException, IllegalAccessException {
         if (StringUtils.isBlank(metaData.getRequestUrl())) {
             if (StringUtils.isNotBlank(metaData.getBaseUrl()) && StringUtils.isNotBlank(metaData.getPathUrl())) {
                 metaData.setRequestUrl(String.format("%s%s", metaData.getBaseUrl(), metaData.getPathUrl()));
             }
         }
+        Object body = this.findBody(method, args);
+        if (body != null) {
+            metaData.setRequestBody(JSON.parseObject(JSON.toJSONString(body), Map.class));
+        }
         metaData.setResponseType(method.getReturnType());
+    }
+
+    private Object findBody(Method method, Object[] args) {
+        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+        for (int i = 0; i < parameterAnnotations.length; i++) {
+            for (Annotation annotation : parameterAnnotations[i]) {
+                if (annotation instanceof HttpBody) {
+                    return args[i];
+                }
+            }
+        }
+        return null;
     }
 
     private void metaValidate(HttpRequestMetaData metaData, Method method) {

@@ -7,11 +7,12 @@ import java.lang.annotation.*;
 
 /**
  * @author refacter
- * Date：Create in 2022/8/30 21:24
+ * use this annotation to mark request body object
+ * Date：Create in 2022/9/1 21:45
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target(ElementType.PARAMETER)
 @Documented
 @Import(EasyHttpClientProxyRegister.class)
-public @interface EnableHttpClient {
+public @interface HttpBody {
 }

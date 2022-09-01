@@ -1,5 +1,6 @@
 request.get.base.url: https://autumnfish.cn
+request.post.base.url: https://httpbin.org/post
 easy-http:
-  connectTimeout: 3
-  readTimeout: 3
-  writeTimeout: 3
+  connectTimeout: 10
+  readTimeout: 10
+  writeTimeout: 10
