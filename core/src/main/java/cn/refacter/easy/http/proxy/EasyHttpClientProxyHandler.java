@@ -8,11 +8,7 @@ import cn.refacter.easy.http.utils.OkHttpUtils;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.lang.reflect.InvocationHandler;
@@ -23,9 +19,24 @@ import java.util.Objects;
  * @author refacter
  * Date：Create in 2022/8/30 21:31
  */
-@Component
 @Slf4j
-public class HttpClientProxyHandler implements InvocationHandler, ApplicationContextAware {
+public class EasyHttpClientProxyHandler implements InvocationHandler {
+
+
+    private volatile static EasyHttpClientProxyHandler uniqueHandler;
+
+    private EasyHttpClientProxyHandler() {}
+
+    public static EasyHttpClientProxyHandler getInstance() {
+        if(uniqueHandler == null) {
+            synchronized(EasyHttpClientProxyHandler.class) {
+                if(uniqueHandler == null) {
+                    uniqueHandler = new EasyHttpClientProxyHandler();
+                }
+            }
+        }
+        return uniqueHandler;
+    }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -87,12 +98,5 @@ public class HttpClientProxyHandler implements InvocationHandler, ApplicationCon
         String errorTemplate = String.format("%s#%s", className, methodName);
         Assert.state(StringUtils.isNotBlank(metaData.getRequestUrl()), String.format("%s requestUrl is blank", errorTemplate));
         Assert.state(metaData.getHttpMethod() != null, String.format("%s httpMethod is null", errorTemplate));
-    }
-
-    private ApplicationContext applicationContext;
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 }

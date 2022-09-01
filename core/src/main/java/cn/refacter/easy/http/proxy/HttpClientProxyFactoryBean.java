@@ -25,9 +25,6 @@ import java.util.Map;
 @Component
 public class HttpClientProxyFactoryBean<T> implements FactoryBean<T>, InitializingBean, ApplicationContextAware, EnvironmentAware {
 
-    @Autowired
-    private HttpClientProxyHandler httpClientProxyHandler;
-
     private static final PropertyPlaceholderHelper placeholderHelper = new PropertyPlaceholderHelper("${", "}", null, true);
     private ApplicationContext applicationContext;
     private Class<?> type;
@@ -37,7 +34,7 @@ public class HttpClientProxyFactoryBean<T> implements FactoryBean<T>, Initializi
     @Override
     public T getObject() throws Exception {
         this.processHttpRequestValue();
-        return (T) Proxy.newProxyInstance(getObjectType().getClassLoader(), new Class[]{getObjectType()}, httpClientProxyHandler);
+        return (T) Proxy.newProxyInstance(getObjectType().getClassLoader(), new Class[]{getObjectType()}, EasyHttpClientProxyHandler.getInstance());
     }
 
     private void processHttpRequestValue() throws Exception {
