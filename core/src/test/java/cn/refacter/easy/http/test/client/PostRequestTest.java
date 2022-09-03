@@ -1,5 +1,6 @@
 package cn.refacter.easy.http.test.client;
 
+import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.test.TestApplication;
 import com.alibaba.fastjson.JSON;
 import org.junit.Assert;
@@ -28,6 +29,6 @@ public class PostRequestTest {
         String str = "123";
         PostRequestTestClient.Body1 body = new PostRequestTestClient.Body1(str);
         PostRequestTestClient.ResponseBody1 response = postRequestTestClient.test(body);
-        Assert.assertEquals(response.getJson(), JSON.toJSONString(body));
+        Assert.assertEquals(response.getJson(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(body));
     }
 }

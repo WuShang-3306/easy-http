@@ -3,11 +3,11 @@ package cn.refacter.easy.http.proxy;
 import cn.refacter.easy.http.annotations.HttpBody;
 import cn.refacter.easy.http.annotations.HttpRequest;
 import cn.refacter.easy.http.base.HttpRequestMetaData;
+import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.constant.HttpMethod;
 import cn.refacter.easy.http.exception.EasyHttpRuntimeException;
 import cn.refacter.easy.http.utils.OkHttpUtils;
 import com.alibaba.fastjson.JSON;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
@@ -22,7 +22,6 @@ import java.util.Objects;
  * @author refacter
  * Date：Create in 2022/8/30 21:31
  */
-@Slf4j
 public class EasyHttpClientProxyHandler implements InvocationHandler {
 
 
@@ -53,13 +52,14 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         this.metaValidate(metaData, method);
 
         String responseStr = this.request(metaData);
-        return JSON.parseObject(responseStr, metaData.getResponseType());
+        return EasyHttpGlobalConfiguration.getJsonConverter().parseObject(responseStr, metaData.getResponseType());
     }
 
     private String request(HttpRequestMetaData metaData) {
+        // TODO: 2022/9/2 dynamic use okhttp3 or httpclient
         try {
             if (HttpMethod.POST.equals(metaData.getHttpMethod())) {
-                return OkHttpUtils.postJson(metaData.getRequestUrl(), JSON.toJSONString(metaData.getRequestBody()), null);
+                return OkHttpUtils.postJson(metaData.getRequestUrl(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(metaData.getRequestBody()), null);
             } else if (HttpMethod.GET.equals(metaData.getHttpMethod())) {
                 return OkHttpUtils.get(metaData.getRequestUrl(), metaData.getRequestParam(), null);
             } else {
@@ -96,7 +96,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         }
         Object body = this.findBody(method, args);
         if (body != null) {
-            metaData.setRequestBody(JSON.parseObject(JSON.toJSONString(body), Map.class));
+            metaData.setRequestBody(EasyHttpGlobalConfiguration.getJsonConverter().parseObject(JSON.toJSONString(body), Map.class));
         }
         metaData.setResponseType(method.getReturnType());
     }

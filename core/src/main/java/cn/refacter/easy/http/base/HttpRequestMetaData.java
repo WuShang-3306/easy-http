@@ -3,6 +3,7 @@ package cn.refacter.easy.http.base;
 import cn.refacter.easy.http.constant.HttpMethod;
 import lombok.Data;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,4 +20,6 @@ public class HttpRequestMetaData {
     private Map<String, String> requestBody;
     private Class<?> responseType;
     // TODO: 2022/8/28 requestHeader
+    private Integer requestBodyIndex;
+    private List<Integer> requestParamIndexList;
 }

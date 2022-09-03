@@ -22,7 +22,11 @@ dependencies {
 
     implementation 'org.apache.commons:commons-lang3:3.8.1'
     implementation 'org.slf4j:slf4j-api:1.7.30'
+
+    // json
     implementation 'com.alibaba:fastjson:1.2.83'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'

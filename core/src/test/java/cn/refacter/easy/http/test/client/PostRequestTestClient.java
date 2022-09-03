@@ -17,6 +17,9 @@ public interface PostRequestTestClient {
     class Body1 {
         private String test;
 
+        public Body1() {
+        }
+
         public Body1(String test) {
             this.test = test;
         }
@@ -32,6 +35,9 @@ public interface PostRequestTestClient {
 
     class ResponseBody1 {
         private String json;
+
+        public ResponseBody1() {
+        }
 
         public ResponseBody1(String json) {
             this.json = json;
