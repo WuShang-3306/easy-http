@@ -22,6 +22,17 @@ public interface EasyHttpRequestSupport {
         return get(requestUrl.toString(), header);
     }
 
+    default String postJson(String url, Map<String, String> requestParam, String jsonBody, Map<String, String> header) throws IOException {
+        StringBuilder requestUrl = new StringBuilder(url);
+        if (!CollectionUtils.isEmpty(requestParam)) {
+            requestUrl.append("?");
+            for (Map.Entry<String, String> entry : requestParam.entrySet()) {
+                requestUrl.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        return postJson(requestUrl.toString(), jsonBody, header);
+    }
+
     String get(String url, Map<String, String> header) throws IOException;
 
     String postJson(String url, String json, Map<String, String> header) throws IOException;

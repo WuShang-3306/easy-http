@@ -1,6 +1,7 @@
 package cn.refacter.easy.http.test.client;
 
 import cn.refacter.easy.http.annotations.HttpBody;
+import cn.refacter.easy.http.annotations.HttpParam;
 import cn.refacter.easy.http.annotations.HttpRequest;
 
 /**
@@ -12,7 +13,10 @@ public interface PostRequestTestClient {
 
 
     @HttpRequest(requestUrl = "${request.post.base.url}")
-    ResponseBody1 test(@HttpBody Body1 body);
+    ResponseBody1 simpleBodyTest(@HttpBody Body1 body);
+
+    @HttpRequest(requestUrl = "${request.post.base.url}")
+    ResponseBody1 paramAndBodyTest(@HttpParam("rar") String rar, @HttpBody Body1 body);
 
     class Body1 {
         private String test;
@@ -36,6 +40,8 @@ public interface PostRequestTestClient {
     class ResponseBody1 {
         private String json;
 
+        private String url;
+
         public ResponseBody1() {
         }
 
@@ -49,6 +55,14 @@ public interface PostRequestTestClient {
 
         public void setJson(String json) {
             this.json = json;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 }

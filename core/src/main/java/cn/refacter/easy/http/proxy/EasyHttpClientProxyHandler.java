@@ -8,14 +8,17 @@ import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.config.HttpAutoConfiguration;
 import cn.refacter.easy.http.constant.HttpMethod;
 import cn.refacter.easy.http.exception.EasyHttpRuntimeException;
+import cn.refacter.easy.http.utils.ClassUtils;
 import cn.refacter.easy.http.utils.EasyHttpRequestSupport;
 import cn.refacter.easy.http.utils.HttpRequestWrapperFactory;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -30,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class EasyHttpClientProxyHandler implements InvocationHandler {
 
+    private static LocalVariableTableParameterNameDiscoverer parameterNameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
 
     private volatile static EasyHttpClientProxyHandler uniqueHandler;
 
@@ -80,7 +84,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         EasyHttpRequestSupport requestDelegate = HttpRequestWrapperFactory.getRequestWrapper(HttpAutoConfiguration.getBackClient());
         try {
             if (HttpMethod.POST.equals(metaData.getHttpMethod())) {
-                return requestDelegate.postJson(metaData.getRequestUrl(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(requestBody), null);
+                return requestDelegate.postJson(metaData.getRequestUrl(), requestParam, EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(requestBody), null);
             } else if (HttpMethod.GET.equals(metaData.getHttpMethod())) {
                 return requestDelegate.get(metaData.getRequestUrl(), requestParam, null);
             } else {
@@ -114,15 +118,21 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         Map<Integer, String> paramIndexNameCacheMap = new HashMap<>();
         metaData.setParamIndexNameCacheMap(paramIndexNameCacheMap);
         for (int i = 0; i < parameterAnnotations.length; i++) {
-            for (Annotation annotation : parameterAnnotations[i]) {
-                if (annotation instanceof HttpParam) {
-                    paramIndexNameCacheMap.put(i, parameters[i].getName());
+            for (int j = 0; j < parameterAnnotations[i].length; j++) {
+                if (parameterAnnotations[i][j] instanceof HttpParam) {
+                    if (ClassUtils.isCustomClass(parameters[0].getType())) {
+                        // param-bean support
+                    }
+                    else {
+                        paramIndexNameCacheMap.put(i, ((HttpParam)parameterAnnotations[i][j]).value());
+                    }
                     break;
                 }
-                else if (annotation instanceof HttpBody) {
+                else if (parameterAnnotations[i][j] instanceof HttpBody) {
                     metaData.setRequestBodyIndex(i);
                     break;
                 }
+
             }
         }
     }

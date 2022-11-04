@@ -13,4 +13,6 @@ import java.lang.annotation.*;
 @Target(ElementType.PARAMETER)
 @Documented
 public @interface HttpParam {
+
+    String value() default "";
 }

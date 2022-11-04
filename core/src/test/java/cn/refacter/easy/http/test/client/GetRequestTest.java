@@ -36,6 +36,7 @@ public class GetRequestTest {
 
 
     @Test
+    // error
     public void getParamBeanRequestTest() {
         ParamBean bean = new ParamBean().setKeywords("你不懂我").setType(0);
         String result = getRequestTestClient.getParamBeanRequest(bean);

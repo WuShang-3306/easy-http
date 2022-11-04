@@ -15,7 +15,7 @@ public interface GetRequestTestClient {
     String getSimpleRequest();
 
     @HttpRequest(pathUrl = "/search", httpMethod = HttpMethod.GET)
-    String getParamRequest(@HttpParam String keywords);
+    String getParamRequest(@HttpParam("keywords") String keywords);
 
     @HttpRequest(pathUrl = "/search", httpMethod = HttpMethod.GET)
     String getParamBeanRequest(@HttpParam GetRequestTest.ParamBean bean);
