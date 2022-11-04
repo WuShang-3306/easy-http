@@ -16,10 +16,8 @@ public class HttpRequestMetaData {
     private String pathUrl;
     private String requestUrl;
     private HttpMethod httpMethod;
-    private Map<String, String> requestParam;
-    private Map<String, String> requestBody;
     private Class<?> responseType;
     // TODO: 2022/8/28 requestHeader
     private Integer requestBodyIndex;
-    private List<Integer> requestParamIndexList;
+    private Map<Integer, String> paramIndexNameCacheMap;
 }

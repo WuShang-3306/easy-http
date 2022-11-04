@@ -32,6 +32,7 @@ public class EasyHttpClientProxyFactoryBean<T> implements FactoryBean<T>, Initia
 
     @Override
     public T getObject() throws Exception {
+        // TODO: 2022/9/3 check config refresh
         this.processHttpRequestValue();
         return (T) Proxy.newProxyInstance(getObjectType().getClassLoader(), new Class[]{getObjectType()}, EasyHttpClientProxyHandler.getInstance());
     }

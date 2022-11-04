@@ -22,6 +22,8 @@ public class HttpAutoConfiguration {
     private Integer connectTimeout = null;
     private Integer readTimeout = null;
     private Integer writeTimeout = null;
+    // proxy cache
+    private static Boolean enableProxyCache = true;
     // TODO: 2022/8/30 默认日志是否开启、代理缓存是否开启
 
 
@@ -29,5 +31,9 @@ public class HttpAutoConfiguration {
     @Bean
     public OkHttpClient easyHttpOkHttpClient() {
         return new OkHttpClient().newBuilder().connectTimeout(connectTimeout, TimeUnit.SECONDS).writeTimeout(writeTimeout, TimeUnit.SECONDS).readTimeout(readTimeout, TimeUnit.SECONDS).build();
+    }
+
+    public static Boolean getEnableProxyCache() {
+        return enableProxyCache;
     }
 }

@@ -7,11 +7,10 @@ import java.lang.annotation.*;
 
 /**
  * @author refacter
- * use this annotation to mark request body object
- * Date：Create in 2022/9/1 21:45
+ * Date：Create in 2022/9/3 14:29
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @Documented
-public @interface HttpBody {
+public @interface HttpParam {
 }

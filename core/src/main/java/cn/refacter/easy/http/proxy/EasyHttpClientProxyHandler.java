@@ -1,9 +1,11 @@
 package cn.refacter.easy.http.proxy;
 
 import cn.refacter.easy.http.annotations.HttpBody;
+import cn.refacter.easy.http.annotations.HttpParam;
 import cn.refacter.easy.http.annotations.HttpRequest;
 import cn.refacter.easy.http.base.HttpRequestMetaData;
 import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
+import cn.refacter.easy.http.config.HttpAutoConfiguration;
 import cn.refacter.easy.http.constant.HttpMethod;
 import cn.refacter.easy.http.exception.EasyHttpRuntimeException;
 import cn.refacter.easy.http.utils.OkHttpUtils;
@@ -15,8 +17,12 @@ import org.springframework.util.Assert;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author refacter
@@ -40,28 +46,42 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         return uniqueHandler;
     }
 
+    // proxy cache
+    private Map<Method, HttpRequestMetaData> metaCache = new ConcurrentHashMap<>();
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         // TODO: 2022/9/2 proxy cache
-        HttpRequestMetaData metaData = new HttpRequestMetaData();
-        HttpRequest classAnnotation = AnnotationUtils.getAnnotation(method.getDeclaringClass(), HttpRequest.class);
-        HttpRequest methodAnnotation = method.getDeclaringClass().getDeclaredMethod(method.getName(), method.getParameterTypes()).getDeclaredAnnotation(HttpRequest.class);
-        this.classAnnotationProcess(classAnnotation, metaData);
-        this.methodAnnotationProcess(methodAnnotation, metaData);
-        this.metaDataProcess(metaData, method, args);
-        this.metaValidate(metaData, method);
+        HttpRequestMetaData metaData = null;
 
-        String responseStr = this.request(metaData);
+        if (HttpAutoConfiguration.getEnableProxyCache()) {
+            metaData = metaCache.get(method);
+        }
+        if (metaData == null) {
+            HttpRequest classAnnotation = AnnotationUtils.getAnnotation(method.getDeclaringClass(), HttpRequest.class);
+            HttpRequest methodAnnotation = method.getDeclaringClass().getDeclaredMethod(method.getName(), method.getParameterTypes()).getDeclaredAnnotation(HttpRequest.class);
+            this.classAnnotationProcess(classAnnotation, metaData);
+            this.methodAnnotationProcess(methodAnnotation, metaData);
+            this.paramAnnotationProcess(method, metaData);
+            // TODO: 2022/9/3 requestHeader
+            this.metaDataProcess(metaData, method, args);
+            this.metaValidate(metaData, method);
+            metaCache.put(method, metaData);
+        }
+        Map<String, String> requestParam = this.requestParamProcess(metaData, args);
+        Map<String, String> requestBody = this.requestBodyProcess(metaData, args);
+
+        String responseStr = this.request(metaData, requestParam, requestBody);
         return EasyHttpGlobalConfiguration.getJsonConverter().parseObject(responseStr, metaData.getResponseType());
     }
 
-    private String request(HttpRequestMetaData metaData) {
+    private String request(HttpRequestMetaData metaData,Map<String, String> requestParam, Map<String, String> requestBody) {
         // TODO: 2022/9/2 dynamic use okhttp3 or httpclient
         try {
             if (HttpMethod.POST.equals(metaData.getHttpMethod())) {
-                return OkHttpUtils.postJson(metaData.getRequestUrl(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(metaData.getRequestBody()), null);
+                return OkHttpUtils.postJson(metaData.getRequestUrl(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(requestBody), null);
             } else if (HttpMethod.GET.equals(metaData.getHttpMethod())) {
-                return OkHttpUtils.get(metaData.getRequestUrl(), metaData.getRequestParam(), null);
+                return OkHttpUtils.get(metaData.getRequestUrl(), requestParam, null);
             } else {
                 throw new UnsupportedOperationException("unsupported http request type");
             }
@@ -87,6 +107,46 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         metaData.setHttpMethod(Objects.isNull(httpRequest.httpMethod()) ? metaData.getHttpMethod() : httpRequest.httpMethod());
     }
 
+    private void paramAnnotationProcess(Method method, HttpRequestMetaData metaData) {
+        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+        Parameter[] parameters = method.getParameters();
+        Map<Integer, String> paramIndexNameCacheMap = new HashMap<>();
+        metaData.setParamIndexNameCacheMap(paramIndexNameCacheMap);
+        for (int i = 0; i < parameterAnnotations.length; i++) {
+            for (Annotation annotation : parameterAnnotations[i]) {
+                if (annotation instanceof HttpParam) {
+                    paramIndexNameCacheMap.put(i, parameters[i].getName());
+                    break;
+                }
+                else if (annotation instanceof HttpBody) {
+                    metaData.setRequestBodyIndex(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    private Map<String, String> requestParamProcess(HttpRequestMetaData metaData, Object[] args) {
+        Map<String, String> requestParam = new HashMap<>();
+        if (metaData.getParamIndexNameCacheMap() != null && !metaData.getParamIndexNameCacheMap().isEmpty()) {
+            for (Map.Entry<Integer, String> entry : metaData.getParamIndexNameCacheMap().entrySet()) {
+                if (args[entry.getKey()] instanceof String) {
+                    requestParam.put(entry.getValue(), (String) args[entry.getKey()]);
+                }
+                requestParam.put(entry.getValue(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(args[entry.getKey()]));
+            }
+        }
+        return requestParam;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> requestBodyProcess(HttpRequestMetaData metaData, Object[] args) {
+        if (metaData.getRequestBodyIndex() != null) {
+            return EasyHttpGlobalConfiguration.getJsonConverter().parseObject(JSON.toJSONString(args[metaData.getRequestBodyIndex()]), Map.class);
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     private void metaDataProcess(HttpRequestMetaData metaData, Method method, Object[] args) throws InstantiationException, IllegalAccessException {
         if (StringUtils.isBlank(metaData.getRequestUrl())) {
@@ -94,23 +154,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
                 metaData.setRequestUrl(String.format("%s%s", metaData.getBaseUrl(), metaData.getPathUrl()));
             }
         }
-        Object body = this.findBody(method, args);
-        if (body != null) {
-            metaData.setRequestBody(EasyHttpGlobalConfiguration.getJsonConverter().parseObject(JSON.toJSONString(body), Map.class));
-        }
         metaData.setResponseType(method.getReturnType());
-    }
-
-    private Object findBody(Method method, Object[] args) {
-        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-        for (int i = 0; i < parameterAnnotations.length; i++) {
-            for (Annotation annotation : parameterAnnotations[i]) {
-                if (annotation instanceof HttpBody) {
-                    return args[i];
-                }
-            }
-        }
-        return null;
     }
 
     private void metaValidate(HttpRequestMetaData metaData, Method method) {

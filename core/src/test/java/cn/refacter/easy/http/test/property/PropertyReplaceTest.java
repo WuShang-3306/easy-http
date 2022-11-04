@@ -22,19 +22,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class PropertyReplaceTest {
 
     @Autowired
-    private GetRequestTestClient getRequestTestClient;
-    @Autowired
     private OkHttpUtils okHttpUtils;
 
     @Test
     public void classReplaceTest() {
         HttpRequest httpRequest = GetRequestTestClient.class.getDeclaredAnnotation(HttpRequest.class);
         Assert.assertEquals(httpRequest.baseUrl(), "https://autumnfish.cn");
-    }
-
-    @Test
-    public void getRequestTest() {
-        String result = getRequestTestClient.getRequest();
-        Assert.assertNotNull(result);
     }
 }
