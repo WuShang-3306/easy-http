@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @ConfigurationProperties(prefix = "easy-http", ignoreUnknownFields = true)
-@Data
 public class HttpAutoConfiguration {
     private static Integer connectTimeout = 5;
     private static Integer readTimeout = 5;
@@ -30,11 +29,6 @@ public class HttpAutoConfiguration {
 
 
     private HttpAutoConfiguration() {
-    }
-
-    @Bean
-    public OkHttpClient easyHttpOkHttpClient() {
-        return new OkHttpClient().newBuilder().connectTimeout(connectTimeout, TimeUnit.SECONDS).writeTimeout(writeTimeout, TimeUnit.SECONDS).readTimeout(readTimeout, TimeUnit.SECONDS).build();
     }
 
     public static Integer getConnectTimeout() {

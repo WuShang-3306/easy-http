@@ -38,6 +38,18 @@ public class HttpRequestWrapperFactory {
             }
             else {
                 // other EasyHttpRequestSupport implements
+                try {
+                    Class<?> aClass = Class.forName(clientType);
+                    Object wrapper = aClass.newInstance();
+                    if (wrapper instanceof EasyHttpRequestSupport) {
+                        requestSupport = (EasyHttpRequestSupport) wrapper;
+                    }
+                    else {
+                        throw new Error("easy-http:back-http not implements EasyHttpRequestSupport");
+                    }
+                } catch (Exception e) {
+                    throw new Error(e);
+                }
             }
         }
         return requestSupport;
