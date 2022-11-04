@@ -58,6 +58,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
             metaData = metaCache.get(method);
         }
         if (metaData == null) {
+            metaData = new HttpRequestMetaData();
             HttpRequest classAnnotation = AnnotationUtils.getAnnotation(method.getDeclaringClass(), HttpRequest.class);
             HttpRequest methodAnnotation = method.getDeclaringClass().getDeclaredMethod(method.getName(), method.getParameterTypes()).getDeclaredAnnotation(HttpRequest.class);
             this.classAnnotationProcess(classAnnotation, metaData);
