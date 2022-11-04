@@ -2,6 +2,7 @@ package cn.refacter.easy.http.utils;
 
 import org.springframework.util.CollectionUtils;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Map;
  */
 public interface EasyHttpRequestSupport {
 
-    default String get(String url, Map<String, String> requestParam, Map<String, String> header) {
+    default String get(String url, Map<String, String> requestParam, Map<String, String> header) throws IOException {
         StringBuilder requestUrl = new StringBuilder(url);
         if (!CollectionUtils.isEmpty(requestParam)) {
             requestUrl.append("?");
@@ -21,7 +22,7 @@ public interface EasyHttpRequestSupport {
         return get(requestUrl.toString(), header);
     }
 
-    String get(String url, Map<String, String> header);
+    String get(String url, Map<String, String> header) throws IOException;
 
-    String postJson(String url, String json, Map<String, String> header);
+    String postJson(String url, String json, Map<String, String> header) throws IOException;
 }
