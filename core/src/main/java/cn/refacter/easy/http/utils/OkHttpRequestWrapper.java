@@ -10,13 +10,12 @@ import java.util.Map;
  * @author refacter
  * Date：Create in 2022/11/4 14:32
  */
-@Component
 public class OkHttpRequestWrapper implements EasyHttpRequestSupport {
 
-    private static OkHttpClient CLIENT;
+    private OkHttpClient CLIENT;
 
-    public static void setCLIENT(OkHttpClient easyHttpOkHttpClient) {
-        OkHttpRequestWrapper.CLIENT = easyHttpOkHttpClient;
+    public OkHttpRequestWrapper(OkHttpClient client) {
+        CLIENT = client;
     }
 
     @Override

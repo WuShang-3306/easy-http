@@ -8,7 +8,8 @@ import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.config.HttpAutoConfiguration;
 import cn.refacter.easy.http.constant.HttpMethod;
 import cn.refacter.easy.http.exception.EasyHttpRuntimeException;
-import cn.refacter.easy.http.utils.OkHttpUtils;
+import cn.refacter.easy.http.utils.EasyHttpRequestSupport;
+import cn.refacter.easy.http.utils.HttpRequestWrapperFactory;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -19,7 +20,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,12 +77,12 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
     }
 
     private String request(HttpRequestMetaData metaData,Map<String, String> requestParam, Map<String, String> requestBody) {
-        // TODO: 2022/9/2 dynamic use okhttp3 or httpclient
+        EasyHttpRequestSupport requestDelegate = HttpRequestWrapperFactory.getRequestWrapper(HttpAutoConfiguration.getBackClient());
         try {
             if (HttpMethod.POST.equals(metaData.getHttpMethod())) {
-                return OkHttpUtils.postJson(metaData.getRequestUrl(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(requestBody), null);
+                return requestDelegate.postJson(metaData.getRequestUrl(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(requestBody), null);
             } else if (HttpMethod.GET.equals(metaData.getHttpMethod())) {
-                return OkHttpUtils.get(metaData.getRequestUrl(), requestParam, null);
+                return requestDelegate.get(metaData.getRequestUrl(), requestParam, null);
             } else {
                 throw new UnsupportedOperationException("unsupported http request type");
             }
