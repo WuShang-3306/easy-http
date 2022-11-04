@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+cn.refacter.easy.http.utils.OkHttpUtils,\
+cn.refacter.easy.http.utils.OkHttpRequestWrapper,\
+cn.refacter.easy.http.config.HttpAutoConfiguration
