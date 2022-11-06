@@ -16,9 +16,10 @@ public interface EasyHttpRequestSupport {
         if (!CollectionUtils.isEmpty(requestParam)) {
             requestUrl.append("?");
             for (Map.Entry<String, String> entry : requestParam.entrySet()) {
-                requestUrl.append(entry.getKey()).append("=").append(entry.getValue());
+                requestUrl.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
             }
         }
+        requestUrl.delete(requestUrl.length()-1, requestUrl.length());
         return get(requestUrl.toString(), header);
     }
 
@@ -27,9 +28,10 @@ public interface EasyHttpRequestSupport {
         if (!CollectionUtils.isEmpty(requestParam)) {
             requestUrl.append("?");
             for (Map.Entry<String, String> entry : requestParam.entrySet()) {
-                requestUrl.append(entry.getKey()).append("=").append(entry.getValue());
+                requestUrl.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
             }
         }
+        requestUrl.delete(requestUrl.length()-1, requestUrl.length());
         return postJson(requestUrl.toString(), jsonBody, header);
     }
 

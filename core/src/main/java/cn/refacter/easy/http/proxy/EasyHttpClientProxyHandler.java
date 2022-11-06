@@ -3,7 +3,7 @@ package cn.refacter.easy.http.proxy;
 import cn.refacter.easy.http.annotations.HttpBody;
 import cn.refacter.easy.http.annotations.HttpParam;
 import cn.refacter.easy.http.annotations.HttpRequest;
-import cn.refacter.easy.http.base.HttpRequestMetaData;
+import cn.refacter.easy.http.base.ProxyMetaData;
 import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.config.HttpAutoConfiguration;
 import cn.refacter.easy.http.constant.HttpMethod;
@@ -51,18 +51,18 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
     }
 
     // proxy cache
-    private Map<Method, HttpRequestMetaData> metaCache = new ConcurrentHashMap<>();
+    private Map<Method, ProxyMetaData> metaCache = new ConcurrentHashMap<>();
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         // TODO: 2022/9/2 proxy cache
-        HttpRequestMetaData metaData = null;
+        ProxyMetaData metaData = null;
 
         if (HttpAutoConfiguration.getEnableProxyCache()) {
             metaData = metaCache.get(method);
         }
         if (metaData == null) {
-            metaData = new HttpRequestMetaData();
+            metaData = new ProxyMetaData();
             HttpRequest classAnnotation = AnnotationUtils.getAnnotation(method.getDeclaringClass(), HttpRequest.class);
             HttpRequest methodAnnotation = method.getDeclaringClass().getDeclaredMethod(method.getName(), method.getParameterTypes()).getDeclaredAnnotation(HttpRequest.class);
             this.classAnnotationProcess(classAnnotation, metaData);
@@ -80,7 +80,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         return EasyHttpGlobalConfiguration.getJsonConverter().parseObject(responseStr, metaData.getResponseType());
     }
 
-    private String request(HttpRequestMetaData metaData,Map<String, String> requestParam, Map<String, String> requestBody) {
+    private String request(ProxyMetaData metaData, Map<String, String> requestParam, Map<String, String> requestBody) {
         EasyHttpRequestSupport requestDelegate = HttpRequestWrapperFactory.getRequestWrapper(HttpAutoConfiguration.getBackClient());
         try {
             if (HttpMethod.POST.equals(metaData.getHttpMethod())) {
@@ -95,24 +95,24 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         }
     }
 
-    private void classAnnotationProcess(HttpRequest httpRequest, HttpRequestMetaData metaData) {
+    private void classAnnotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) {
         Assert.state(httpRequest != null, "HttpClient proxy class not find specific annotation");
         this.annotationProcess(httpRequest, metaData);
     }
 
-    private void methodAnnotationProcess(HttpRequest httpRequest, HttpRequestMetaData metaData) {
+    private void methodAnnotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) {
         Assert.state(httpRequest != null, "HttpClient proxy class-method not find specific annotation");
         this.annotationProcess(httpRequest, metaData);
     }
 
-    private void annotationProcess(HttpRequest httpRequest, HttpRequestMetaData metaData) {
+    private void annotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) {
         metaData.setRequestUrl(StringUtils.isNotBlank(httpRequest.requestUrl()) ? httpRequest.requestUrl() : metaData.getRequestUrl());
         metaData.setBaseUrl(StringUtils.isNotBlank(httpRequest.baseUrl()) ? httpRequest.baseUrl() : metaData.getBaseUrl());
         metaData.setPathUrl(StringUtils.isNotBlank(httpRequest.pathUrl()) ? httpRequest.pathUrl() : metaData.getPathUrl());
         metaData.setHttpMethod(Objects.isNull(httpRequest.httpMethod()) ? metaData.getHttpMethod() : httpRequest.httpMethod());
     }
 
-    private void paramAnnotationProcess(Method method, HttpRequestMetaData metaData) {
+    private void paramAnnotationProcess(Method method, ProxyMetaData metaData) {
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
         Parameter[] parameters = method.getParameters();
         Map<Integer, String> paramIndexNameCacheMap = new HashMap<>();
@@ -122,6 +122,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
                 if (parameterAnnotations[i][j] instanceof HttpParam) {
                     if (ClassUtils.isCustomClass(parameters[0].getType())) {
                         // param-bean support
+                        paramIndexNameCacheMap.put(i, ((HttpParam)parameterAnnotations[i][j]).value());
                     }
                     else {
                         paramIndexNameCacheMap.put(i, ((HttpParam)parameterAnnotations[i][j]).value());
@@ -137,21 +138,40 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         }
     }
 
-    private Map<String, String> requestParamProcess(HttpRequestMetaData metaData, Object[] args) {
+    private Map<String, String> requestParamProcess(ProxyMetaData metaData, Object[] args) {
         Map<String, String> requestParam = new HashMap<>();
         if (metaData.getParamIndexNameCacheMap() != null && !metaData.getParamIndexNameCacheMap().isEmpty()) {
             for (Map.Entry<Integer, String> entry : metaData.getParamIndexNameCacheMap().entrySet()) {
-                if (args[entry.getKey()] instanceof String) {
+                if (ClassUtils.isCustomClass(args[entry.getKey()].getClass())) {
+                    requestParam.putAll(this.getRequestParamFromBean(args[entry.getKey()]));
+                }
+                else {
                     requestParam.put(entry.getValue(), (String) args[entry.getKey()]);
                 }
-                requestParam.put(entry.getValue(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(args[entry.getKey()]));
             }
         }
         return requestParam;
     }
 
+    public Map<String, String> getRequestParamFromBean(Object paramBean) {
+        Field[] fields = paramBean.getClass().getDeclaredFields();
+        Map<String, String> paramMap = new HashMap<>(fields.length);
+        try {
+            for (Field field : fields) {
+                field.setAccessible(true);
+                Object o = field.get(paramBean);
+                if (!Objects.isNull(o)) {
+                    paramMap.put(field.getName(), (String) o);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return paramMap;
+    }
+
     @SuppressWarnings("unchecked")
-    private Map<String, String> requestBodyProcess(HttpRequestMetaData metaData, Object[] args) {
+    private Map<String, String> requestBodyProcess(ProxyMetaData metaData, Object[] args) {
         if (metaData.getRequestBodyIndex() != null) {
             return EasyHttpGlobalConfiguration.getJsonConverter().parseObject(JSON.toJSONString(args[metaData.getRequestBodyIndex()]), Map.class);
         }
@@ -159,7 +179,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private void metaDataProcess(HttpRequestMetaData metaData, Method method, Object[] args) throws InstantiationException, IllegalAccessException {
+    private void metaDataProcess(ProxyMetaData metaData, Method method, Object[] args) throws InstantiationException, IllegalAccessException {
         if (StringUtils.isBlank(metaData.getRequestUrl())) {
             if (StringUtils.isNotBlank(metaData.getBaseUrl()) && StringUtils.isNotBlank(metaData.getPathUrl())) {
                 metaData.setRequestUrl(String.format("%s%s", metaData.getBaseUrl(), metaData.getPathUrl()));
@@ -168,7 +188,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         metaData.setResponseType(method.getReturnType());
     }
 
-    private void metaValidate(HttpRequestMetaData metaData, Method method) {
+    private void metaValidate(ProxyMetaData metaData, Method method) {
         String className = method.getDeclaringClass().getSimpleName();
         String methodName = method.getName();
         String errorTemplate = String.format("%s#%s", className, methodName);

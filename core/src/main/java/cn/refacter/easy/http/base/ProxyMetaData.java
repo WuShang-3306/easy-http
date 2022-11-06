@@ -1,6 +1,7 @@
 package cn.refacter.easy.http.base;
 
 import cn.refacter.easy.http.constant.HttpMethod;
+import cn.refacter.easy.http.interceptor.Interceptor;
 import lombok.Data;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.Map;
  * Date：Create in 2022/8/30 21:40
  */
 @Data
-public class HttpRequestMetaData {
+public class ProxyMetaData {
     private String baseUrl;
     private String pathUrl;
     // real url
@@ -25,4 +26,5 @@ public class HttpRequestMetaData {
     private Integer requestBodyIndex;
     // httpParam index&name
     private Map<Integer, String> paramIndexNameCacheMap;
+    private List<Interceptor> interceptorChain;
 }

@@ -43,4 +43,16 @@ public class PostRequestTest {
         String url = String.format("%s%s%s", postBaseUrl, "?rar=", str);
         Assert.assertEquals(response.getJson(), url);
     }
+
+
+    @Test
+    public void paramBeanAndBodyTest() {
+        String rar = "rar"; String text = "text"; String str = "123";
+        PostRequestTestClient.ParamBean paramBean = new PostRequestTestClient.ParamBean(rar, text);
+        PostRequestTestClient.Body1 body = new PostRequestTestClient.Body1(str);
+        PostRequestTestClient.ResponseBody1 response = postRequestTestClient.paramBeanAndBodyTest(paramBean, body);
+        Assert.assertEquals(response.getJson(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(body));
+        Assert.assertEquals(paramBean.getRar(), response.getArgs().getRar());
+        Assert.assertEquals(paramBean.getText(), response.getArgs().getText());
+    }
 }
