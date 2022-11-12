@@ -2,18 +2,15 @@ package cn.refacter.easy.http.test.client;
 
 import cn.refacter.easy.http.test.TestApplication;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * @author refacter
  * Date：Create in 2022/9/3 14:36
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestApplication.class)
 @SpringBootApplication(scanBasePackages = "cn.refacter.easy.http")
 public class GetRequestTest {

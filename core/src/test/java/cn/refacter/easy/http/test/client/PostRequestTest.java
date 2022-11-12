@@ -3,19 +3,16 @@ package cn.refacter.easy.http.test.client;
 import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.test.TestApplication;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * @author refacter
  * Date：Create in 2022/9/1 21:52
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestApplication.class)
 @SpringBootApplication(scanBasePackages = "cn.refacter.easy.http")
 public class PostRequestTest {
@@ -41,7 +38,7 @@ public class PostRequestTest {
         PostRequestTestClient.ResponseBody1 response = postRequestTestClient.paramAndBodyTest(str, body);
         Assert.assertEquals(response.getJson(), EasyHttpGlobalConfiguration.getJsonConverter().toJSONString(body));
         String url = String.format("%s%s%s", postBaseUrl, "?rar=", str);
-        Assert.assertEquals(response.getJson(), url);
+        Assert.assertEquals(response.getUrl(), url);
     }
 
 

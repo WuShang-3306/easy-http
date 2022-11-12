@@ -4,6 +4,7 @@ import cn.refacter.easy.http.constant.HttpMethod;
 import cn.refacter.easy.http.interceptor.Interceptor;
 import lombok.Data;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -26,5 +27,5 @@ public class ProxyMetaData {
     private Integer requestBodyIndex;
     // httpParam index&name
     private Map<Integer, String> paramIndexNameCacheMap;
-    private List<Interceptor> interceptorChain;
+    private List<Interceptor> interceptorChain = Collections.emptyList();
 }

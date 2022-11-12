@@ -8,11 +8,15 @@ import cn.refacter.easy.http.config.EasyHttpGlobalConfiguration;
 import cn.refacter.easy.http.config.HttpAutoConfiguration;
 import cn.refacter.easy.http.constant.HttpMethod;
 import cn.refacter.easy.http.exception.EasyHttpRuntimeException;
+import cn.refacter.easy.http.interceptor.Interceptor;
 import cn.refacter.easy.http.utils.ClassUtils;
 import cn.refacter.easy.http.utils.EasyHttpRequestSupport;
 import cn.refacter.easy.http.utils.HttpRequestWrapperFactory;
 import com.alibaba.fastjson.JSON;
+import javafx.application.Application;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
@@ -22,9 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,16 +41,19 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
 
     private EasyHttpClientProxyHandler() {}
 
-    public static EasyHttpClientProxyHandler getInstance() {
+    public static EasyHttpClientProxyHandler getInstance(ApplicationContext applicationContext) {
         if(uniqueHandler == null) {
             synchronized(EasyHttpClientProxyHandler.class) {
                 if(uniqueHandler == null) {
                     uniqueHandler = new EasyHttpClientProxyHandler();
+                    uniqueHandler.applicationContext = applicationContext;
                 }
             }
         }
         return uniqueHandler;
     }
+
+    private ApplicationContext applicationContext;
 
     // proxy cache
     private Map<Method, ProxyMetaData> metaCache = new ConcurrentHashMap<>();
@@ -75,8 +80,20 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         }
         Map<String, String> requestParam = this.requestParamProcess(metaData, args);
         Map<String, String> requestBody = this.requestBodyProcess(metaData, args);
-
+        boolean hasInterceptor = !metaData.getInterceptorChain().isEmpty();
+        // before request
+        if (hasInterceptor) {
+            for (Interceptor interceptor : metaData.getInterceptorChain()) {
+                interceptor.beforeRequest(metaData, requestParam, requestBody);
+            }
+        }
         String responseStr = this.request(metaData, requestParam, requestBody);
+        // post request
+        if (hasInterceptor) {
+            for (Interceptor interceptor : metaData.getInterceptorChain()) {
+                responseStr = interceptor.postRequest(responseStr);
+            }
+        }
         return EasyHttpGlobalConfiguration.getJsonConverter().parseObject(responseStr, metaData.getResponseType());
     }
 
@@ -95,21 +112,35 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
         }
     }
 
-    private void classAnnotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) {
+    private void classAnnotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) throws InstantiationException, IllegalAccessException {
         Assert.state(httpRequest != null, "HttpClient proxy class not find specific annotation");
         this.annotationProcess(httpRequest, metaData);
     }
 
-    private void methodAnnotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) {
+    private void methodAnnotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) throws InstantiationException, IllegalAccessException {
         Assert.state(httpRequest != null, "HttpClient proxy class-method not find specific annotation");
         this.annotationProcess(httpRequest, metaData);
     }
 
-    private void annotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) {
+    private void annotationProcess(HttpRequest httpRequest, ProxyMetaData metaData) throws InstantiationException, IllegalAccessException {
         metaData.setRequestUrl(StringUtils.isNotBlank(httpRequest.requestUrl()) ? httpRequest.requestUrl() : metaData.getRequestUrl());
         metaData.setBaseUrl(StringUtils.isNotBlank(httpRequest.baseUrl()) ? httpRequest.baseUrl() : metaData.getBaseUrl());
         metaData.setPathUrl(StringUtils.isNotBlank(httpRequest.pathUrl()) ? httpRequest.pathUrl() : metaData.getPathUrl());
         metaData.setHttpMethod(Objects.isNull(httpRequest.httpMethod()) ? metaData.getHttpMethod() : httpRequest.httpMethod());
+        if (httpRequest.interceptors().length > 0) {
+            List<Interceptor> interceptorChain = new ArrayList<>(httpRequest.interceptors().length);
+            for (Class<? extends Interceptor> interceptor : httpRequest.interceptors()) {
+                Interceptor bean;
+                try {
+                    bean = this.applicationContext.getBean(interceptor);
+                } catch (BeansException e) {
+                    // no spring bean
+                    bean = interceptor.newInstance();
+                }
+                interceptorChain.add(bean);
+            }
+            metaData.setInterceptorChain(interceptorChain);
+        }
     }
 
     private void paramAnnotationProcess(Method method, ProxyMetaData metaData) {
@@ -161,7 +192,7 @@ public class EasyHttpClientProxyHandler implements InvocationHandler {
                 field.setAccessible(true);
                 Object o = field.get(paramBean);
                 if (!Objects.isNull(o)) {
-                    paramMap.put(field.getName(), (String) o);
+                    paramMap.put(field.getName(), o.toString());
                 }
             }
         } catch (Exception e) {

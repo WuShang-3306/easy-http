@@ -1,8 +1,10 @@
 package cn.refacter.easy.http.annotations;
 
 import cn.refacter.easy.http.constant.HttpMethod;
+import cn.refacter.easy.http.interceptor.Interceptor;
 
 import java.lang.annotation.*;
+import java.util.List;
 
 /**
  * @author refacter
@@ -33,4 +35,6 @@ public @interface HttpRequest {
      * support: POST GET
      */
     HttpMethod httpMethod() default HttpMethod.POST;
+
+    Class<? extends Interceptor>[] interceptors() default {};
 }
